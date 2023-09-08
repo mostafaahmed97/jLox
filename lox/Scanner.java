@@ -140,8 +140,11 @@ public class Scanner {
                 break;
 
             default:
-                // Handle with default case to
-                // avoid adding switch for every number
+                /*
+                 * Handling numbers & identifiers
+                 * in the default case to avoid
+                 * switching on each digit/letter
+                 */
                 if (isDigit(c))
                     number();
                 else if (isAlpha(c))
