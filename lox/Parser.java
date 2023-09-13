@@ -1,6 +1,7 @@
 package lox;
 
 import java.util.List;
+import java.util.ArrayList;
 import static lox.TokenType.*;
 
 // A parser is responsible for ingesting the set of 
@@ -34,12 +35,18 @@ public class Parser {
         this.tokens = tokens;
     }
 
-    Expr parse() {
-        try {
-            return expression();
-        } catch (ParseError e) {
-            return null;
-        }
+    /*
+     * Takes in a sequence of tokens
+     * and returns a list of statement
+     * syntax trees
+     */
+    List<Stmt> parse() {
+        List<Stmt> statements = new ArrayList<>();
+
+        while (!isAtEnd())
+            statements.add(statement());
+
+        return statements;
     }
 
     // Impl. for the expression rule,
@@ -47,6 +54,32 @@ public class Parser {
     // for equality finds
     private Expr expression() {
         return equality();
+    }
+
+    // statement -> exprStatement | printStatement
+    private Stmt statement() {
+        if (match(PRINT))
+            return printStatement();
+
+        return expressionStatement();
+    }
+
+    // printStatement -> "print" expression ";"
+    private Stmt printStatement() {
+        // "print" was consumed earlier, now we get the expression
+        Expr value = expression();
+
+        // & the ending semicolon
+        consume(SEMICOLON, "Expect ';' after value.");
+
+        // then return this syntax tree
+        return new Stmt.Print(value);
+    }
+
+    private Stmt expressionStatement() {
+        Expr expr = expression();
+        consume(SEMICOLON, "Expect ';' after value.");
+        return new Stmt.Expression(expr);
     }
 
     private Expr equality() {
