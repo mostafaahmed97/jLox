@@ -44,22 +44,50 @@ public class Parser {
         List<Stmt> statements = new ArrayList<>();
 
         while (!isAtEnd())
-            statements.add(statement());
+            statements.add(declaration());
 
         return statements;
     }
 
-    // Impl. for the expression rule,
-    // it simply returns what the rule
-    // for equality finds
     private Expr expression() {
-        return equality();
+        return assignment();
     }
 
-    // statement -> exprStatement | printStatement
+    // declaration → varDeclr | statement ;
+    private Stmt declaration() {
+        try {
+            if (match(VAR)) {
+                return varDeclaration();
+            } else {
+                return statement();
+            }
+        } catch (ParseError e) {
+            synchronize();
+            return null;
+        }
+    }
+
+    // varDecl -> "var" IDENTIFIER ( "=" expression )? ";" ;
+    private Stmt varDeclaration() {
+
+        // var keyword was already matched
+        Token name = consume(IDENTIFIER, "Expected a variable name");
+
+        Expr initializer = null;
+        if (match(EQUAL))
+            initializer = expression();
+
+        consume(SEMICOLON, "Expect ';' after value.");
+
+        return new Stmt.Var(name, initializer);
+    }
+
+    // statement -> exprStatement | printStatement | block
     private Stmt statement() {
         if (match(PRINT))
             return printStatement();
+        if (match(LEFT_BRACE))
+            return new Stmt.Block(block());
 
         return expressionStatement();
     }
@@ -76,10 +104,50 @@ public class Parser {
         return new Stmt.Print(value);
     }
 
+    // exprStmt -> expression ";" ;
     private Stmt expressionStatement() {
         Expr expr = expression();
         consume(SEMICOLON, "Expect ';' after value.");
         return new Stmt.Expression(expr);
+    }
+
+    private List<Stmt> block() {
+        List<Stmt> statements = new ArrayList<>();
+
+        while (!check(RIGHT_BRACE) && !isAtEnd())
+            statements.add(declaration());
+
+        consume(RIGHT_BRACE, "Expect '}' after block.");
+        return statements;
+    }
+
+    private Expr assignment() {
+        // Get left hand side
+        Expr expr = equality();
+
+        if (match(EQUAL)) {
+            // Equal means it's an assignment
+
+            Token equals = previous();
+            // Get the expression of right hand side that will evaluate to value
+            Expr value = equality();
+
+            if (expr instanceof Expr.Variable) {
+                /*
+                 * Only return an assignment syntax node
+                 * if lhs is a valid assignment target.
+                 * an l-value that we can evaluate to sth in the environment
+                 */
+
+                // Cast it to a variable expr (we know it is bec of the if)
+                Token name = ((Expr.Variable) expr).name;
+                return new Expr.Assign(name, value);
+            }
+
+            error(equals, "Invalid assignment target");
+        }
+
+        return expr;
     }
 
     private Expr equality() {
@@ -171,6 +239,10 @@ public class Parser {
 
         if (match(NUMBER, STRING)) {
             return new Expr.Literal(previous().literal);
+        }
+
+        if (match(IDENTIFIER)) {
+            return new Expr.Variable(previous());
         }
 
         if (match(LEFT_PAREN)) {
