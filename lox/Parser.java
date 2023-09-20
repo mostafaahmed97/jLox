@@ -2,6 +2,7 @@ package lox;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
 import static lox.TokenType.*;
 
 // A parser is responsible for ingesting the set of 
@@ -82,14 +83,151 @@ public class Parser {
         return new Stmt.Var(name, initializer);
     }
 
-    // statement -> exprStatement | printStatement | block
+    /*
+     * statement -> exprStatement |
+     * printStatement |
+     * ifStmt |
+     * whileStmt |
+     * block
+     */
     private Stmt statement() {
+        if (match(FOR))
+            return forStatement();
+        if (match(IF))
+            return ifStatement();
         if (match(PRINT))
             return printStatement();
+        if (match(WHILE))
+            return whileStatement();
         if (match(LEFT_BRACE))
             return new Stmt.Block(block());
 
         return expressionStatement();
+    }
+
+    /*
+     * ifStmt → "if" "(" expression ")" statement
+     * ( "else" statement )? ;
+     */
+    private Stmt ifStatement() {
+        consume(LEFT_PAREN, "");
+        Expr condition = expression();
+
+        consume(RIGHT_PAREN, "null");
+
+        /*
+         * Block is a statement
+         * Also we cant declare a var
+         * in body of if bec. we
+         * separated it into
+         * another rule
+         */
+        Stmt thenBranch = statement();
+
+        Stmt elseBranch = null;
+        if (match(ELSE))
+            elseBranch = statement();
+
+        return new Stmt.If(condition, thenBranch, elseBranch);
+    }
+
+    /*
+     * We are desugaring the for into
+     * simpler stmts (while loop & others) our interpretor
+     * can already handle. So we haven't added
+     * a Stmt syntax node for it.
+     * 
+     * forStmt → "for" "(" ( varDecl | exprStmt | ";" )
+     * expression? ";"
+     * expression? ")" statement ;
+     */
+    private Stmt forStatement() {
+        consume(LEFT_BRACE, "Expect '('' after 'for'.");
+
+        Stmt initializer;
+
+        // Possible causes for the first clause
+        if (match(SEMICOLON)) {
+            initializer = null;
+        } else if (match(VAR)) {
+            initializer = varDeclaration();
+        } else {
+            initializer = expressionStatement();
+        }
+
+        Expr condition = null;
+        if (!check(SEMICOLON)) {
+            condition = expression();
+        }
+
+        consume(SEMICOLON, "Expect ';' after loop condition.");
+
+        Expr increment = null;
+        if (!check(SEMICOLON)) {
+            increment = expression();
+        }
+
+        consume(RIGHT_PAREN, "Expect ')' after for clauses.");
+
+        Stmt body = statement();
+
+        /*
+         * Now all the individual parts are parsed
+         * 
+         * for (var i = 0; i < 10; i = i + 1) print i;
+         * 
+         * is equivalent to
+         * 
+         * {
+         * 
+         * // initializer
+         * var i = 0;
+         * 
+         * // body & condition
+         * while (i < 10) {
+         * print i;
+         * 
+         * // increment
+         * i = i + 1;
+         * }
+         * }
+         */
+
+        /*
+         * If we have an increment
+         */
+        if (increment != null) {
+            body = new Stmt.Block(
+                    Arrays.asList(
+                            body,
+                            new Stmt.Expression(increment)));
+        }
+
+        // if no condition was provided make it always true
+        if (condition == null)
+            condition = new Expr.Literal(true);
+
+        // Wrap up the body so far (statement of for + increment) with the condition
+        body = new Stmt.While(condition, body);
+
+        // run init once before loop block
+        if (initializer != null) {
+            body = new Stmt.Block(Arrays.asList(
+                    initializer,
+                    body));
+        }
+
+        return body;
+    }
+
+    // whileStmt -> "while" "(" expression ")" statement ;
+    private Stmt whileStatement() {
+        consume(LEFT_PAREN, "Expect '(' after 'while'.");
+        Expr condition = expression();
+        consume(RIGHT_PAREN, "Expect ')' after condition.");
+        Stmt body = statement();
+
+        return new Stmt.While(condition, body);
     }
 
     // printStatement -> "print" expression ";"
@@ -123,7 +261,7 @@ public class Parser {
 
     private Expr assignment() {
         // Get left hand side
-        Expr expr = equality();
+        Expr expr = or();
 
         if (match(EQUAL)) {
             // Equal means it's an assignment
@@ -145,6 +283,32 @@ public class Parser {
             }
 
             error(equals, "Invalid assignment target");
+        }
+
+        return expr;
+    }
+
+    private Expr or() {
+        Expr expr = and();
+
+        while (match(OR)) {
+            Token operator = previous();
+            Expr right = and();
+
+            expr = new Expr.Logical(expr, operator, right);
+        }
+
+        return expr;
+    }
+
+    private Expr and() {
+        Expr expr = equality();
+
+        while (match(AND)) {
+            Token operator = previous();
+            Expr right = equality();
+
+            expr = new Expr.Logical(expr, operator, right);
         }
 
         return expr;
