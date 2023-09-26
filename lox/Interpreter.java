@@ -2,6 +2,8 @@ package lox;
 
 import lox.Expr.*;
 import lox.Stmt.*;
+
+import java.util.ArrayList;
 import java.util.List;
 
 /* 
@@ -19,7 +21,7 @@ import java.util.List;
  * runtime
  */
 
-public class Interpretor implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
+public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     // The runtime storage for variables
     private Environment environment = new Environment();
@@ -180,6 +182,32 @@ public class Interpretor implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             return;
 
         throw new RuntimeError(operator, "Operands must be numbers");
+    }
+
+    @Override
+    public Object visitCallExpr(Call expr) {
+        Object callee = evaluate(expr.callee);
+
+        // If it's something that cant be called (string, number, ...) ,throw runtime
+        if (!(callee instanceof LoxCallable))
+            throw new RuntimeError(expr.paren, "Can only call functions and classes.");
+
+        List<Object> arguments = new ArrayList<>();
+        for (Expr argument : expr.arguments)
+            arguments.add(evaluate(argument));
+
+        /*
+         * Cast the callee as LoxCallablle to use it's methods
+         * It should be so bec we checked above
+         */
+        LoxCallable function = (LoxCallable) callee;
+
+        if (arguments.size() != function.arity())
+            throw new RuntimeError(expr.paren, "Expected " +
+                    function.arity() + " arguments but got " +
+                    arguments.size() + ".");
+
+        return function.call(this, arguments);
     }
 
     /*

@@ -12,7 +12,7 @@ public class Lox {
     static boolean hadError = false;
     static boolean hadRuntimeError = false;
 
-    private static final Interpretor interpreter = new Interpretor();
+    private static final Interpreter interpreter = new Interpreter();
 
     public static void main(String[] args) throws IOException {
 

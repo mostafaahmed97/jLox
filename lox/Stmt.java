@@ -4,17 +4,12 @@ import java.util.List;
 
 abstract class Stmt {
   interface Visitor<R> {
-    R visitBlockStmt(Block stmt);
-
-    R visitExpressionStmt(Expression stmt);
-
-    R visitIfStmt(If stmt);
-
-    R visitPrintStmt(Print stmt);
-
-    R visitVarStmt(Var stmt);
-
-    R visitWhileStmt(While stmt);
+	 R visitBlockStmt(Block stmt);
+	 R visitExpressionStmt(Expression stmt);
+	 R visitIfStmt(If stmt);
+	 R visitPrintStmt(Print stmt);
+	 R visitVarStmt(Var stmt);
+	 R visitWhileStmt(While stmt);
   }
 
   abstract <R> R accept(Visitor<R> visitor);
@@ -32,7 +27,6 @@ abstract class Stmt {
     }
 
   }
-
   static class Expression extends Stmt {
     Expression(Expr expression) {
       this.expression = expression;
@@ -46,7 +40,6 @@ abstract class Stmt {
     }
 
   }
-
   static class If extends Stmt {
     If(Expr condition, Stmt thenBranch, Stmt elseBranch) {
       this.condition = condition;
@@ -64,7 +57,6 @@ abstract class Stmt {
     }
 
   }
-
   static class Print extends Stmt {
     Print(Expr expression) {
       this.expression = expression;
@@ -78,7 +70,6 @@ abstract class Stmt {
     }
 
   }
-
   static class Var extends Stmt {
     Var(Token name, Expr initializer) {
       this.name = name;
@@ -94,7 +85,6 @@ abstract class Stmt {
     }
 
   }
-
   static class While extends Stmt {
     While(Expr condition, Stmt body) {
       this.condition = condition;
