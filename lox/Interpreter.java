@@ -23,8 +23,39 @@ import java.util.List;
 
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
+    final Environment globals = new Environment();
+
     // The runtime storage for variables
     private Environment environment = new Environment();
+
+    Interpreter() {
+
+        /*
+         * Here we define the native functions.
+         * Functions that are available in the global scope
+         * and implemented in the runtime's language.
+         * (vars and fns live in the same space, the environment)
+         */
+
+        globals.define("clock", new LoxCallable() {
+            @Override
+            public int arity() {
+                return 0;
+            }
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                return (double) System.currentTimeMillis() / 1000.0;
+            }
+
+            @Override
+            public String toString() {
+                return "<native fn>";
+            }
+
+        });
+
+    }
 
     /*
      * Takes in the syntax tree
