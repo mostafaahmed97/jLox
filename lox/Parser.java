@@ -54,9 +54,11 @@ public class Parser {
         return assignment();
     }
 
-    // declaration → varDeclr | statement ;
+    // declaration → varDecl | funDecl | statement ;
     private Stmt declaration() {
         try {
+            if (match(FUN))
+                return function("function");
             if (match(VAR)) {
                 return varDeclaration();
             } else {
@@ -66,6 +68,35 @@ public class Parser {
             synchronize();
             return null;
         }
+    }
+
+    /*
+     * funDecl → "fun" function ;
+     * function → IDENTIFIER "(" parameters? ")" block ;
+     */
+    private Stmt.Function function(String kind) {
+        Token name = consume(IDENTIFIER, "Expect " + kind + " name.");
+
+        consume(LEFT_PAREN, "Expect '(' after " + kind + " name.");
+
+        List<Token> parameters = new ArrayList<>();
+
+        if (!check(RIGHT_PAREN)) {
+            do {
+                if (parameters.size() >= 255) {
+                    error(peek(), "Can't have more than 255 parameters.");
+                }
+
+                parameters.add(
+                        consume(IDENTIFIER, "Expect parameter name."));
+            } while (match(COMMA));
+        }
+
+        consume(RIGHT_PAREN, "Expect ')' after parameters.");
+        consume(LEFT_BRACE, "Expect '{' before " + kind + " body.");
+
+        List<Stmt> body = block();
+        return new Stmt.Function(name, parameters, body);
     }
 
     // varDecl -> "var" IDENTIFIER ( "=" expression )? ";" ;
@@ -85,6 +116,7 @@ public class Parser {
 
     /*
      * statement -> exprStatement |
+     * returnStatement |
      * printStatement |
      * ifStmt |
      * whileStmt |
@@ -95,6 +127,8 @@ public class Parser {
             return forStatement();
         if (match(IF))
             return ifStatement();
+        if (match(RETURN))
+            return returnStatement();
         if (match(PRINT))
             return printStatement();
         if (match(WHILE))
@@ -142,7 +176,7 @@ public class Parser {
      * expression? ")" statement ;
      */
     private Stmt forStatement() {
-        consume(LEFT_BRACE, "Expect '('' after 'for'.");
+        consume(LEFT_PAREN, "Expect '('' after 'for'.");
 
         Stmt initializer;
 
@@ -240,6 +274,20 @@ public class Parser {
 
         // then return this syntax tree
         return new Stmt.Print(value);
+    }
+
+    // returnStmt → "return" expression? ";" ;
+    private Stmt returnStatement() {
+        Token keyword = previous();
+
+        Expr value = null;
+
+        if (!check(SEMICOLON))
+            value = expression();
+
+        consume(SEMICOLON, "Expect ';' after return value.");
+
+        return new Stmt.Return(keyword, value);
     }
 
     // exprStmt -> expression ";" ;

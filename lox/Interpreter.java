@@ -26,7 +26,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     final Environment globals = new Environment();
 
     // The runtime storage for variables
-    private Environment environment = new Environment();
+    private Environment environment = globals;
 
     Interpreter() {
 
@@ -217,9 +217,20 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Object visitCallExpr(Call expr) {
+
+        /*
+         * evaluate() the callee in a call expr.
+         * If it's an Identifier (variablExpr)
+         * then it will be fetched from the environment.
+         */
         Object callee = evaluate(expr.callee);
 
-        // If it's something that cant be called (string, number, ...) ,throw runtime
+        /*
+         * If it's not sth that implements a
+         * LoxCallable (function, class), like a
+         * string or a number, then we
+         * probably shouldn't invoke it lol.
+         */
         if (!(callee instanceof LoxCallable))
             throw new RuntimeError(expr.paren, "Can only call functions and classes.");
 
@@ -310,6 +321,8 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         Environment previous = this.environment;
 
         try {
+            this.environment = environment;
+
             for (Stmt statement : statements)
                 execute(statement);
         } finally {
@@ -320,6 +333,22 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     @Override
     public Void visitExpressionStmt(Expression stmt) {
         evaluate(stmt.expression);
+        return null;
+    }
+
+    /*
+     * Adds the runtime representation of a
+     * function declaration to the environment.
+     * 
+     * The current environment is passed to be the
+     * closure for the function. This builds a chain
+     * of environments through the invocations that
+     * starts from the global environment.
+     */
+    @Override
+    public Void visitFunctionStmt(Function stmt) {
+        LoxFunction function = new LoxFunction(stmt, environment);
+        environment.define(stmt.name.lexeme, function);
         return null;
     }
 
@@ -345,6 +374,24 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         Object value = evaluate(stmt.expression);
         System.out.println(stringify(value));
         return null;
+    }
+
+    /*
+     * A return statement evaluates the expression
+     * for it's value if present, then throws that
+     * value as an exception to unwind the call stack.
+     * 
+     * This exception is caught in the LoxFunction
+     * runtime implementation.
+     */
+    @Override
+    public Void visitReturnStmt(Stmt.Return stmt) {
+        Object value = null;
+
+        if (stmt.value != null)
+            value = evaluate(stmt.value);
+
+        throw new Return(value);
     }
 
     // Declares a variable

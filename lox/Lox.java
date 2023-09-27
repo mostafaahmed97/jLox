@@ -15,7 +15,6 @@ public class Lox {
     private static final Interpreter interpreter = new Interpreter();
 
     public static void main(String[] args) throws IOException {
-
         if (args.length > 1) {
             System.out.println("Too many args, Provide one filepath or no args to use interpreter");
             System.exit(64);
@@ -24,7 +23,6 @@ public class Lox {
         } else {
             runPrompt();
         }
-
     }
 
     // Read a file & run it
