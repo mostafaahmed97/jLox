@@ -144,3 +144,104 @@ primary        → "true" | "false" | "nil"
                | "(" expression ")"
                | IDENTIFIER ;
 ```
+
+### Functions
+
+We added multiple rules to support calling & declaring functions
+
+To call a function, the additions to the expression grammar are:
+
+```typescript
+expression     → assignment ;
+
+assignment     → IDENTIFIER "=" assignment
+               | logic_or ;
+
+logic_or       → logic_and ( "or" logic_and )* ;
+logic_and      → equality ( "and" equality )* ;
+
+equality       → comparison ( ( "!=" | "==" ) comparison )* ;
+comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
+term           → factor ( ( "-" | "+" ) factor )* ;
+factor         → unary ( ( "/" | "*" ) unary )* ;
+
+unary          → ( "!" | "-" ) unary | call  ;
+call           → primary ( "(" arguments? ")" )* ;
+
+arguments      → expression ( "," expression )* ;
+
+primary        → "true" | "false" | "nil"
+               | NUMBER | STRING
+               | "(" expression ")"
+               | IDENTIFIER ;
+```
+
+A call rule is slotted between Primary & Unary to have the highest precedence.
+
+A call is a Primary expression followed by a list of arguments, each of those arguments can expand to an Expression itself.
+
+
+To declare a function we extended the Declaration rule
+in statement grammar to expand to a function declaration.
+
+```Java
+declaration    → funDecl
+               | varDecl
+               | statement ;
+
+funDecl        → "fun" function ;
+function       → IDENTIFIER "(" parameters? ")" block ;
+parameters     → IDENTIFIER ( "," IDENTIFIER )* ;
+
+```
+
+Last step was to add a return statement
+
+```Java
+statement      → exprStmt
+               | forStmt
+               | ifStmt
+               | printStmt
+               | returnStmt
+               | whileStmt
+               | block ;
+
+returnStmt     → "return" expression? ";" ;
+```
+
+So far our statement grammar is
+
+```Java
+declaration    → funDecl
+               | varDecl
+               | statement ;
+
+funDecl        → "fun" function ;
+function       → IDENTIFIER "(" parameters? ")" block ;
+parameters     → IDENTIFIER ( "," IDENTIFIER )* ;
+
+statement      → exprStmt
+               | forStmt
+               | ifStmt
+               | printStmt
+               | returnStmt
+               | whileStmt
+               | block ;
+
+returnStmt     → "return" expression? ";" ;
+
+varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
+
+exprStmt       → expression ";" ;
+printStmt      → "print" expression ";" ;
+ifStmt         → "if" "(" expression ")" statement
+               ( "else" statement )? ;
+            
+whileStmt      → "while" "(" expression ")" statement ;
+forStmt        → "for" "(" ( varDecl | exprStmt | ";" )
+                 expression? ";"
+                 expression? ")" statement ;
+                
+
+
+```

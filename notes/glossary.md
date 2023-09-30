@@ -14,6 +14,7 @@
 - [**l-value vs r-value**](#l-value-vs-r-value)
 - [**Scope**](#scope)
 - [**Shadowing**](#shadowing)
+- [Compile Time vs Runtime representation](#compile-time-vs-runtime-representation)
 
 
 ### **Lexeme**
@@ -206,3 +207,20 @@ var global = "text";
 }
 
 ```
+
+### Compile Time vs Runtime representation
+
+A Compile time representation describes the syntax. It's concerned with
+how a statement is formed. 
+
+For example, a syntax node for a function declaration is concerned with the syntax only. 
+
+It makes sure that parameters are delimited correctly, parenthesis we're closed, etc...
+
+During runtime, we need another way to define the function so we can execute (like we did with LoxCallable & LoxFunction). 
+
+This representation is in the underlying language implementing the compiler (similar to how we picked Java's float to represent all numbers in Lox).
+
+![](./imgs/compile-vs-runtime.png)
+
+<br>
