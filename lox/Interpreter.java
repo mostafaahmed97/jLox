@@ -5,6 +5,8 @@ import lox.Stmt.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 /* 
  * The interpretor evaluates the AST that the parser produced
@@ -27,6 +29,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     // The runtime storage for variables
     private Environment environment = globals;
+    private final Map<Expr, Integer> locals = new HashMap<>();
 
     Interpreter() {
 
@@ -144,7 +147,26 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Object visitVariableExpr(Variable expr) {
-        return environment.get(expr.name);
+        return lookUpVariable(expr.name, expr);
+    }
+
+    /*
+     * Get the variable from the environment at
+     * the distance that was specified by the
+     * resolver.
+     * 
+     * Resolver only resolved local variables,
+     * so if there's no distance we assume it's
+     * a global variable.
+     */
+    private Object lookUpVariable(Token name, Expr expr) {
+        Integer distance = locals.get(expr);
+
+        if (distance != null) {
+            return environment.getAt(distance, name.lexeme);
+        } else {
+            return globals.get(name);
+        }
     }
 
     @Override
@@ -311,6 +333,10 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         stmt.accept(this);
     }
 
+    void resolve(Expr expr, int depth) {
+        locals.put(expr, depth);
+    }
+
     @Override
     public Void visitBlockStmt(Block stmt) {
         executeBlock(stmt.statements, new Environment(environment));
@@ -408,7 +434,14 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     @Override
     public Object visitAssignExpr(Assign expr) {
         Object value = evaluate(expr.value);
-        environment.assign(expr.name, value);
+
+        Integer distance = locals.get(expr);
+
+        if (distance != null) {
+            environment.assignAt(distance, expr.name, value);
+        } else {
+            globals.assign(expr.name, value);
+        }
 
         // Assignment is an expr not a statement, so it returns a value
         return value;

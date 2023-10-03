@@ -7,7 +7,7 @@ public class Environment {
     // The parent scope
     final Environment enclosing;
 
-    private final Map<String, Object> values = new HashMap<>();
+    public final Map<String, Object> values = new HashMap<>();
 
     Environment() {
         this.enclosing = null;
@@ -19,6 +19,29 @@ public class Environment {
 
     void define(String name, Object value) {
         values.put(name, value);
+    }
+
+    Object getAt(int distance, String name) {
+        return ancestor(distance).values.get(name);
+    }
+
+    void assignAt(int distance, Token name, Object value) {
+        ancestor(distance).values.put(name.lexeme, value);
+    }
+
+    Environment ancestor(int distance) {
+        Environment environment = this;
+
+        /*
+         * Walk up the chain the
+         * specified distance.
+         */
+
+        for (int i = 0; i < distance; i++) {
+            environment = environment.enclosing;
+        }
+
+        return environment;
     }
 
     Object get(Token name) {
