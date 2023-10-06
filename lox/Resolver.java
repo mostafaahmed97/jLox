@@ -15,6 +15,7 @@ import lox.Expr.Literal;
 import lox.Expr.Logical;
 import lox.Expr.Unary;
 import lox.Expr.Variable;
+import lox.Stmt.Class;
 import lox.Stmt.Expression;
 import lox.Stmt.Function;
 import lox.Stmt.If;
@@ -58,6 +59,13 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         beginScope();
         resolve(stmt.statements);
         endScope();
+        return null;
+    }
+
+    @Override
+    public Void visitClassStmt(Class stmt) {
+        declare(stmt.name);
+        define(stmt.name);
         return null;
     }
 
