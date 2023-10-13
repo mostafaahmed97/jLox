@@ -16,3 +16,9 @@ var counter = makeCounter();
 counter();
 counter();
 counter();
+
+class MyClass {}
+
+var ins = MyClass();
+ins.x = "Hi from instance property";
+print ins.x;

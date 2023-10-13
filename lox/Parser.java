@@ -329,23 +329,29 @@ public class Parser {
         // Get left hand side
         Expr expr = or();
 
+        // An upcoming EQUAL means it's an assignment
         if (match(EQUAL)) {
-            // Equal means it's an assignment
-
             Token equals = previous();
             // Get the expression of right hand side that will evaluate to value
             Expr value = equality();
 
+            /*
+             * Only return an assignment syntax node
+             * if lhs is a valid assignment target.
+             * an l-value that we can evaluate to sth in the environment
+             * 
+             * A valid targer is either
+             * 1- variable
+             * 2- accessed property on an object instance
+             */
             if (expr instanceof Expr.Variable) {
-                /*
-                 * Only return an assignment syntax node
-                 * if lhs is a valid assignment target.
-                 * an l-value that we can evaluate to sth in the environment
-                 */
 
                 // Cast it to a variable expr (we know it is bec of the if)
                 Token name = ((Expr.Variable) expr).name;
                 return new Expr.Assign(name, value);
+            } else if (expr instanceof Expr.Get) {
+                Expr.Get get = (Expr.Get) expr;
+                return new Expr.Set(get.object, get.name, value);
             }
 
             error(equals, "Invalid assignment target");
@@ -461,9 +467,14 @@ public class Parser {
         Expr expr = primary();
 
         while (true) {
-            if (match(LEFT_PAREN))
+            if (match(LEFT_PAREN)) {
                 expr = finishCall(expr);
-            else
+            }
+            // Accessing property on object instance
+            else if (match(DOT)) {
+                Token name = consume(IDENTIFIER, "Expect property name after '.'.");
+                expr = new Expr.Get(expr, name);
+            } else
                 break;
         }
 

@@ -5,14 +5,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
-import lox.Expr;
-import lox.Stmt;
 import lox.Expr.Assign;
 import lox.Expr.Binary;
 import lox.Expr.Call;
+import lox.Expr.Get;
 import lox.Expr.Grouping;
 import lox.Expr.Literal;
 import lox.Expr.Logical;
+import lox.Expr.Set;
 import lox.Expr.Unary;
 import lox.Expr.Variable;
 import lox.Stmt.Class;
@@ -24,6 +24,46 @@ import lox.Stmt.Return;
 import lox.Stmt.Var;
 import lox.Stmt.While;
 
+/*
+ * A Resolver analyzes the code after parsing.
+ * 
+ * It's job is to bind variable access to the 
+ * corresponding correct definition to avoid scoping
+ * problems. 
+ * 
+ * Example
+ * 
+ * ```
+ *  var a = "global";
+    {
+    fun showA() {
+        print a;
+    }
+
+    showA();
+    var a = "block";
+    showA();
+    }
+ * ```
+ * 
+ * print a; here should always refer to 'global', the lexical
+ * scope for this variable when the function was declared.
+ * 
+ * A Resolver performs a static pass on the code
+ * to inject extra information to aid the interpreter 
+ * perform the correct resolving.
+ * 
+ * The variant we went with counts how many
+ * environments away the variable we're using at.
+ * 
+ * So in the example it tells the interpreter that
+ * var a in the function is from an environment that's
+ * 2 hops backward from the variable's usage. (the global env)
+ * 
+ * P.S: In the actual implementation global variable usages
+ * are given a distance of null, which implicitly means use
+ * the global env.
+ */
 public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
     private final Interpreter interpreter;
@@ -179,6 +219,19 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         resolve(expr.callee);
         for (Expr argument : expr.arguments)
             resolve(argument);
+        return null;
+    }
+
+    @Override
+    public Void visitGetExpr(Get expr) {
+        resolve(expr.object);
+        return null;
+    }
+
+    @Override
+    public Void visitSetExpr(Set expr) {
+        resolve(expr.value);
+        resolve(expr.object);
         return null;
     }
 

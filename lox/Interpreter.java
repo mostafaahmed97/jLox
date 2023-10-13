@@ -275,6 +275,40 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return function.call(this, arguments);
     }
 
+    @Override
+    public Object visitGetExpr(Get expr) {
+
+        // Evaluate the left hand of the dot from the env
+        Object object = evaluate(expr.object);
+
+        /*
+         * If the thing whose property is
+         * getting accessed is an instance
+         * return the property, else it's
+         * a runtime error.
+         */
+        if (object instanceof LoxInstance)
+            return ((LoxInstance) object).get(expr.name);
+
+        throw new RuntimeError(expr.name,
+                "Only instances have properties.");
+
+    }
+
+    @Override
+    public Object visitSetExpr(Set expr) {
+        Object object = evaluate(expr.object);
+
+        if (!(object instanceof LoxInstance))
+            throw new RuntimeError(expr.name,
+                    "Only instances have fields.");
+
+        Object value = evaluate(expr.value);
+        ((LoxInstance) object).set(expr.name, value);
+
+        return null;
+    }
+
     /*
      * This method defines what our language
      * considers truthy or falsey.
