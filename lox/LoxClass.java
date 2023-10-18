@@ -29,14 +29,32 @@ public class LoxClass implements LoxCallable {
         return null;
     }
 
+    /*
+     * The class' implementation of call, creates
+     * & returns a new instance of the class
+     */
     @Override
     public Object call(Interpreter interpreter, List<Object> arguments) {
         LoxInstance instance = new LoxInstance(this);
+
+        /*
+         * If class has a defined constructor
+         * call it before returning the instance
+         */
+        LoxFunction initializer = findMethod("init");
+        if (initializer != null) {
+            initializer.bind(instance).call(interpreter, arguments);
+        }
+
         return instance;
     }
 
     @Override
     public int arity() {
+        LoxFunction initializer = findMethod("init");
+        if (initializer != null)
+            return initializer.arity();
+
         return 0;
     }
 

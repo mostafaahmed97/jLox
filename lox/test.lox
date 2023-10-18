@@ -19,6 +19,11 @@ counter();
 
 class MyClass {
 
+  init(){
+    print "-->> Hello from MyClass' constructor";
+    this.secretValue = 332211;
+  }
+
   firstMethod(){
     print "Hiiiii";
   }
@@ -35,3 +40,5 @@ print ins.x;
 
 MyClass().firstMethod();
 ins.testingThis();
+
+print ins.secretValue;
