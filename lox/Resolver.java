@@ -13,6 +13,7 @@ import lox.Expr.Grouping;
 import lox.Expr.Literal;
 import lox.Expr.Logical;
 import lox.Expr.Set;
+import lox.Expr.This;
 import lox.Expr.Unary;
 import lox.Expr.Variable;
 import lox.Stmt.Class;
@@ -81,11 +82,20 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
      * To help track if we are in a fn
      * or not. To prevent returns from
      * outside a fn.
+     * 
+     * Also to prevent using this outside of
+     * a class method
      */
     private FunctionType currentFunction = FunctionType.NONE;
+    private ClassType currentClass = ClassType.NONE;
 
     Resolver(Interpreter interpreter) {
         this.interpreter = interpreter;
+    }
+
+    private enum ClassType {
+        NONE,
+        CLASS
     }
 
     private enum FunctionType {
@@ -106,13 +116,31 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitClassStmt(Class stmt) {
+        ClassType enclosingClass = currentClass;
+        currentClass = ClassType.CLASS;
+
         declare(stmt.name);
         define(stmt.name);
+
+        /*
+         * A scope that encloses all methods
+         * in a function. Now whenever *this* is
+         * used inside a method it resolves to the one
+         * in it's surrounding scope.
+         * 
+         * The interpreter needs to mirror this action
+         * so our environment chains are correct.
+         */
+        beginScope();
+        scopes.peek().put("this", true);
 
         for (Stmt.Function method : stmt.methods) {
             FunctionType declaration = FunctionType.METHOD;
             resolveFunction(method, declaration);
         }
+
+        endScope();
+        currentClass = enclosingClass;
 
         return null;
     }
@@ -244,6 +272,18 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     }
 
     @Override
+    public Void visitThisExpr(This expr) {
+        if (currentClass == ClassType.NONE) {
+            Lox.error(expr.keyword,
+                    "Can't use 'this' outside of a class.");
+            return null;
+        }
+
+        resolveLocal(expr, expr.keyword);
+        return null;
+    }
+
+    @Override
     public Void visitGroupingExpr(Grouping expr) {
         resolve(expr.expression);
         return null;
@@ -341,8 +381,16 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
     private void resolveLocal(Expr expr, Token name) {
         /*
-         * Walk backwards through the stacked scopes
-         * If we find it, we resolve it with how far
+         * The final step of the resolving journey
+         * Called for variable assignment & access
+         * 
+         * Given an expr (Variable | Assign | This) & the Token
+         * for the variable it uses we do the following:
+         * 
+         * 1 - Walk backwards through the stacked scopes
+         * 
+         * 2 - If we find the Token this expression is
+         * using, we tell the interpreter how far
          * it is from the place that uses it.
          * (0 = current scope, 1 = encolsing scope, etc...)
          */

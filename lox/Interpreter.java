@@ -309,6 +309,11 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return null;
     }
 
+    @Override
+    public Object visitThisExpr(This expr) {
+        return lookUpVariable(expr.keyword, expr);
+    }
+
     /*
      * This method defines what our language
      * considers truthy or falsey.

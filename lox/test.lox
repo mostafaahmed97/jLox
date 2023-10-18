@@ -23,10 +23,15 @@ class MyClass {
     print "Hiiiii";
   }
 
+  testingThis(){
+    print this.x;
+  }
+
 }
 
 var ins = MyClass();
-ins.x = "Hi from instance property";
+ins.x = "I am X";
 print ins.x;
 
 MyClass().firstMethod();
+ins.testingThis();

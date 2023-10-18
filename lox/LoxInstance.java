@@ -24,7 +24,12 @@ public class LoxInstance {
 
         LoxFunction method = klass.findMethod(name.lexeme);
         if (method != null)
-            return method;
+            /*
+             * Don't just return the method, bind to it
+             * it's parent instance for this to
+             * have correct context.
+             */
+            return method.bind(this);
 
         throw new RuntimeError(name,
                 "Undefined property '" + name.lexeme + "'.");
