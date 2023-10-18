@@ -8,7 +8,10 @@ public class LoxInstance {
 
     private LoxClass klass;
 
-    // Fields on the class
+    /*
+     * An instance stores the fileds. Methods are
+     * stored in LoxClass
+     */
     private final Map<String, Object> fields = new HashMap<>();
 
     LoxInstance(LoxClass klass) {
@@ -18,6 +21,10 @@ public class LoxInstance {
     Object get(Token name) {
         if (fields.containsKey(name.lexeme))
             return fields.get(name.lexeme);
+
+        LoxFunction method = klass.findMethod(name.lexeme);
+        if (method != null)
+            return method;
 
         throw new RuntimeError(name,
                 "Undefined property '" + name.lexeme + "'.");

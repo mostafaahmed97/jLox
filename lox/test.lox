@@ -17,8 +17,16 @@ counter();
 counter();
 counter();
 
-class MyClass {}
+class MyClass {
+
+  firstMethod(){
+    print "Hiiiii";
+  }
+
+}
 
 var ins = MyClass();
 ins.x = "Hi from instance property";
 print ins.x;
+
+MyClass().firstMethod();
