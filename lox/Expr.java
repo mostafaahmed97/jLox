@@ -22,6 +22,8 @@ abstract class Expr {
 
     R visitThisExpr(This expr);
 
+    R visitSuperExpr(Super expr);
+
     R visitUnaryExpr(Unary expr);
 
     R visitVariableExpr(Variable expr);
@@ -171,6 +173,22 @@ abstract class Expr {
     @Override
     <R> R accept(Visitor<R> visitor) {
       return visitor.visitThisExpr(this);
+    }
+
+  }
+
+  static class Super extends Expr {
+    Super(Token keyword, Token method) {
+      this.keyword = keyword;
+      this.method = method;
+    }
+
+    final Token keyword;
+    final Token method;
+
+    @Override
+    <R> R accept(Visitor<R> visitor) {
+      return visitor.visitSuperExpr(this);
     }
 
   }

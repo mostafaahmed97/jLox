@@ -310,6 +310,33 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
+    public Object visitSuperExpr(Super expr) {
+        /*
+         * Gets the method from the parent class,
+         * wraps it with an environment defining this
+         * to be the child instance & returns the method.
+         * 
+         * Calling super.parentMethod() will resolve any references
+         * to this inside it to the child instance invoking it.
+         */
+
+        int distance = locals.get(expr);
+
+        LoxClass superclass = (LoxClass) environment.getAt(distance, "super");
+
+        // Get the current object calling the super method
+        LoxInstance object = (LoxInstance) environment.getAt(distance - 1, "this");
+
+        LoxFunction method = superclass.findMethod(expr.method.lexeme);
+
+        if (method == null)
+            throw new RuntimeError(expr.method,
+                    "Undefined property '" + expr.method.lexeme + "'.");
+
+        return method.bind(object);
+    }
+
+    @Override
     public Object visitThisExpr(This expr) {
         return lookUpVariable(expr.keyword, expr);
     }
@@ -398,7 +425,41 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitClassStmt(Class stmt) {
+
+        /*
+         * Evaluate the parent of the class
+         */
+        Object superclass = null;
+        if (stmt.superclass != null) {
+            superclass = evaluate(stmt.superclass);
+
+            if (!(superclass instanceof LoxClass)) {
+                throw new RuntimeError(stmt.superclass.name,
+                        "Superclass must be a class.");
+            }
+        }
+
         environment.define(stmt.name.lexeme, null);
+
+        /*
+         * If this class inherits a parent, nest a
+         * new environment holding reference to
+         * the parent as super.
+         * 
+         * After we init all the methods on the
+         * class with this environment, pop it off.
+         * 
+         * Calls to super in any instance will
+         * get it from this environment.
+         * 
+         * ( Instances bind this to methods later on,
+         * that way we get a chain that flows like this:
+         * Env for super -> Env for this -> Env for method scope )
+         */
+        if (stmt.superclass != null) {
+            environment = new Environment(environment);
+            environment.define("super", superclass);
+        }
 
         /*
          * Convert the AST nodes for methodes within
@@ -412,7 +473,12 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             methods.put(method.name.lexeme, function);
         }
 
-        LoxClass klass = new LoxClass(stmt.name.lexeme, methods);
+        LoxClass klass = new LoxClass(stmt.name.lexeme, (LoxClass) superclass, methods);
+
+        if (stmt.superclass != null) {
+            environment = environment.enclosing;
+        }
+
         environment.assign(stmt.name, klass);
         return null;
     }

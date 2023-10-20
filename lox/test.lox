@@ -17,28 +17,52 @@ counter();
 counter();
 counter();
 
-class MyClass {
 
-  init(){
-    print "-->> Hello from MyClass' constructor";
-    this.secretValue = 332211;
+class GrandParent {
+  methodC(){
+    print this.property;
+    print "GrandParent C";
   }
-
-  firstMethod(){
-    print "Hiiiii";
-  }
-
-  testingThis(){
-    print this.x;
-  }
-
 }
 
-var ins = MyClass();
-ins.x = "I am X";
-print ins.x;
+class Parent < GrandParent {
+  methodA(){
+    print "Parent A";
+  }
 
-MyClass().firstMethod();
-ins.testingThis();
+  methodB(){
+    print "Parent B";
+  }
 
-print ins.secretValue;
+  methodC(){
+    super.methodC();
+    print "Parent C";
+  }
+}
+
+class Child < Parent {
+
+  methodB(){
+    print "Child B";
+  }
+
+  methodC(){
+    super.methodC();
+    print "Child C";
+  }
+}
+
+var childInstance = Child();
+
+childInstance.property = "Child Property";
+print childInstance.property;
+print "--------";
+
+childInstance.methodA();
+print "--------";
+
+childInstance.methodB();
+print "--------";
+
+childInstance.methodC();
+print "--------";
