@@ -14,7 +14,8 @@
 - [**l-value vs r-value**](#l-value-vs-r-value)
 - [**Scope**](#scope)
 - [**Shadowing**](#shadowing)
-- [Compile Time vs Runtime representation](#compile-time-vs-runtime-representation)
+- [**Compile Time vs Runtime representation**](#compile-time-vs-runtime-representation)
+- [**Static Analysis**](#static-analysis)
 
 
 ### **Lexeme**
@@ -25,7 +26,7 @@ Can be an identifier, bracket, operator, etc...
 
 Ex: `(` , `{`, `if`, `while`, variable names are all valid lexemes
 
-<br>
+<br/>
 
 ### **Lexical Grammar**
 
@@ -38,7 +39,7 @@ Grammar = قواعد
 
 The **scanner** implements this grammar
 
-<br>
+<br/>
 
 ### **Token**
 
@@ -48,13 +49,13 @@ Token is a lexeme and some metadata associated with it to help the next steps li
 - Location in code, line & offset
 - Value if it's a number or a string literal
 
-<br>
+<br/>
 
 ### **Scanner**
 
 Consumes a set of characters & outputs a list of tokens
 
-<br>
+<br/>
 
 ### **CFG**
 
@@ -82,13 +83,13 @@ operator       → "==" | "!=" | "<" | "<=" | ">" | ">="
 
 The CFG is implemented in the **parser**
 
-<br>
+<br/>
 
 ### **Parser**
 
 Consumes a set of tokens & outputs a syntax tree of expressions
 
-<br>
+<br/>
 
 
 ### **Precedence**
@@ -97,7 +98,7 @@ Which operators are evaluated first in an expression having multiple different o
 
 ex: multiply before adding
 
-<br>
+<br/>
 
 ### **Associativty** 
 
@@ -111,13 +112,13 @@ ex: adding is right-associative & assigning is left-associative
 a = b = c --> a = (b = c)
 ```
 
-<br>
+<br/>
 
 ### **Top Down Parser**
 
 A parser that starts from the top rule in CFG (one with the least precedence) & works it's way to the leaves of the syntax tree & then back.
 
-<br>
+<br/>
 
 ### **Statement**
 
@@ -125,7 +126,7 @@ Statements are things that produce a side effect, wether it's user visible (say 
 
 An expression evaluates to something, while a statement does something. This is in very broad terms of course.
 
-<br>
+<br/>
 
 ### **Environment**
 
@@ -133,7 +134,7 @@ The thing that holds our state during runtime. Basically a data structure that m
 
 It's also the place we implement scoping in, more on that later.
 
-<br>
+<br/>
 
 ### **l-value vs r-value**
 
@@ -147,7 +148,7 @@ While the RHS `3 + 3` is the `r-value`
 
 This distinction is important for a syntax tree of an assignment expression, we dont want to evaluate the LHS & instead use it as our target.
 
-<br>
+<br/>
 
 ### **Scope**
 
@@ -191,7 +192,7 @@ function playIt(thing) {
 
 Scopes are implemented using environments, the basic idea is that each new scope we go into (usually marked by curly brackets) gets it's own environment.
 
-<br>
+<br/>
 
 ### **Shadowing**
 
@@ -208,7 +209,9 @@ var global = "text";
 
 ```
 
-### Compile Time vs Runtime representation
+<br/>
+
+### **Compile Time vs Runtime representation**
 
 A Compile time representation describes the syntax. It's concerned with
 how a statement is formed. 
@@ -223,4 +226,18 @@ This representation is in the underlying language implementing the compiler (sim
 
 ![](./imgs/compile-vs-runtime.png)
 
-<br>
+<br/>
+
+### **Static Analysis**
+
+Static analysis is a step a compiler can perform after parsing.
+
+Using the outputted syntax tree from parser, a compiler can inspect this tree to perform
+
+- **Code optimizations**, a compiler can simplifiy the user's code for better performance while still maintaining it's semantics.
+- **Detecting static errors**, things like top level return, using `this` outside a method, etc.. 
+- **Variable resolution**, instead of looking up variables on each access during runtime, a static pass can add extra that helps the interpreter do this more efficently.
+
+& many other actions
+
+<br/>
