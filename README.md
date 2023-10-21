@@ -1,8 +1,6 @@
 # jLox
 
-This is my implementation of jLox from [Robert Nystrom's](https://journal.stuffwithstuff.com/) book [Crafting Interpreters](https://craftinginterpreters.com/)
-
-The book is really awesome if you want to learn more about compilers in a hands on way. 
+This is my implementation of jLox from [Robert Nystrom's](https://journal.stuffwithstuff.com/) book [Crafting Interpreters](https://craftinginterpreters.com/). The book is really awesome if you want to learn more about compilers in a hands on way. 
 
 It's been awesome following along & Robert is really good at breaking down concepts in a simple & practical way.
 
